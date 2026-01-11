@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
+import 'dashboard_screen.dart';
 
 /// Login Screen - User Authentication
 /// 
@@ -42,8 +43,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
       
-      // TODO: Add actual authentication logic here
-      // Navigate to home screen after successful login
+      // Navigate to dashboard (replace login screen so user can't go back)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
     }
   }
   
