@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/theme.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 /// Main entry point of the Kids Learning Flashcards App
 /// 
@@ -35,10 +36,13 @@ class KidsLearningApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       
       // ========================================================================
-      // HOME SCREEN
-      // Now using LoginScreen as the entry point
+      // NAMED ROUTES - Cleaner navigation management
       // ========================================================================
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
+      },
     );
   }
 }

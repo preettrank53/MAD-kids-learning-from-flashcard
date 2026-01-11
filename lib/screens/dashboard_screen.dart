@@ -112,25 +112,49 @@ class DashboardScreen extends StatelessWidget {
           ),
           
           // ================================================================
-          // GRID VIEW - Learning Categories
+          // GRID VIEW - Learning Categories (RESPONSIVE)
+          // Uses LayoutBuilder to adjust columns based on screen width
           // ================================================================
           Expanded(
-            child: GridView.count(
-              crossAxisCount: 2, // 2 columns
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-              padding: const EdgeInsets.all(20.0),
-              children: _categories
-                  .map((category) => _buildCategoryCard(
-                        context,
-                        name: category['name'],
-                        icon: category['icon'],
-                        color: category['color'],
-                      ))
-                  .toList(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive logic: 3 columns for wide screens, 2 for narrow
+                int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+                
+                return GridView.count(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                  padding: const EdgeInsets.all(20.0),
+                  children: _categories
+                      .map((category) => _buildCategoryCard(
+                            context,
+                            name: category['name'],
+                            icon: category['icon'],
+                            color: category['color'],
+                          ))
+                      .toList(),
+                );
+              },
             ),
           ),
         ],
+      ),
+      
+      // ====================================================================
+      // FLOATING ACTION BUTTON - Add new flashcards
+      // ====================================================================
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✨ New Flashcards coming soon!'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
+        tooltip: 'Add Flashcards',
       ),
     );
   }

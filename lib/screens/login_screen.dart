@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
-import 'dashboard_screen.dart';
 
 /// Login Screen - User Authentication
 /// 
@@ -43,11 +42,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
       
-      // Navigate to dashboard (replace login screen so user can't go back)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      // Navigate to dashboard using named route (cleaner navigation)
+      Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
   
