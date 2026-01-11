@@ -1,0 +1,30 @@
+name: kids_learning_flashcards
+description: A playful flashcard-based learning app for kids
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI Styling Dependencies
+  google_fonts: ^6.1.0              # For custom typography (Fredoka, Nunito fonts)
+  
+  # Additional recommended dependencies for future features
+  cupertino_icons: ^1.0.2           # iOS-style icons
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0             # Enforces Flutter best practices
+
+flutter:
+  uses-material-design: true
+  
+  # Uncomment to add assets (images, animations) later
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
