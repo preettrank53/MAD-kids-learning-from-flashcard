@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 /// Dashboard Screen - Main Hub for Kids Learning
 /// 
 /// This screen serves as the central navigation hub where kids can
 /// choose different learning categories (flashcards).
+/// Lab 5 Phase 5: Includes logout functionality
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -45,23 +47,22 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       // ====================================================================
-      // APP BAR - No back button, profile icon on right
+      // APP BAR - No back button, logout icon on right
       // ====================================================================
       appBar: AppBar(
         title: const Text('Learning Buddy'),
         automaticallyImplyLeading: false, // Remove back arrow
         actions: [
-          // Profile icon on the right
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
+          // Logout button - Automatically handled by StreamBuilder in main.dart
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              // Call logout service - StreamBuilder will auto-navigate to login
+              await AuthService().logoutUser();
+            },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       
@@ -142,19 +143,20 @@ class DashboardScreen extends StatelessWidget {
       ),
       
       // ====================================================================
-      // FLOATING ACTION BUTTON - Add new flashcards
+      // FLOATING ACTION BUTTON - Add new flashcards (SnackBar demo)
       // ====================================================================
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✨ New Flashcards coming soon!'),
+              content: Text('New Flashcards coming soon!'),
+              backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
             ),
           );
         },
-        child: const Icon(Icons.add),
         tooltip: 'Add Flashcards',
+        child: const Icon(Icons.add),
       ),
     );
   }
