@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'screens/login_screen.dart';
@@ -9,7 +10,7 @@ import 'screens/dashboard_screen.dart';
 /// Main entry point of the Kids Learning Flashcards App
 /// 
 /// This file initializes Firebase and the Flutter application.
-/// Lab 5: Firebase Authentication Integration
+/// Lab 5: Firebase Authentication Integration with Session Management
 void main() async {
   // Ensures Flutter bindings are initialized before Firebase initialization
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,11 +46,39 @@ class KidsLearningApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       
       // ========================================================================
-      // NAMED ROUTES - Cleaner navigation management
+      // SESSION MANAGEMENT - Auth State Listener
+      // Automatically keeps user logged in across app restarts
       // ========================================================================
-      initialRoute: '/',
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // Show loading spinner while checking auth state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.lightTheme.colorScheme.primary,
+                ),
+              ),
+            );
+          }
+          
+          // User is logged in - Show Dashboard
+          if (snapshot.hasData) {
+            return const DashboardScreen();
+          }
+          
+          // User is logged out - Show Login Screen
+          return const LoginScreen();
+        },
+      ),
+      
+      // ========================================================================
+      // NAMED ROUTES - For navigation within the app
+      // ========================================================================
       routes: {
-        '/': (context) => const LoginScreen(),
+        '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const DashboardScreen(),
       },
