@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1057555079617",
+    "project_id": "kids-learning-from-flashcards",
+    "storage_bucket": "kids-learning-from-flashcards.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057555079617:android:3447e67ddf0c0e1a870f40",
+        "android_client_info": {
+          "package_name": "com.example.kids_learning_flashcards"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9H44SDQN5XGEdfUIM_nMK-0r88r7Hd08"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

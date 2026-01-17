@@ -49,13 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
   
   /// Handle create account button press
   void _handleCreateAccount() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('🎉 Create Account feature coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    // TODO: Navigate to signup screen
+    // Navigate to signup screen using named route
+    Navigator.pushNamed(context, '/signup');
   }
 
   @override

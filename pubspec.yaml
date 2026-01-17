@@ -13,6 +13,10 @@ dependencies:
   # UI Styling Dependencies
   google_fonts: ^6.1.0              # For custom typography (Fredoka, Nunito fonts)
   
+  # Firebase Dependencies (Lab 5: Authentication)
+  firebase_core: ^3.8.1             # Firebase Core SDK
+  firebase_auth: ^5.3.4             # Firebase Authentication
+  
   # Additional recommended dependencies for future features
   cupertino_icons: ^1.0.2           # iOS-style icons
 

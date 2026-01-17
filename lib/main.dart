@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/dashboard_screen.dart';
 
 /// Main entry point of the Kids Learning Flashcards App
 /// 
-/// This file initializes the Flutter application and applies the custom theme.
-void main() {
-  // Ensures Flutter bindings are initialized before running the app
+/// This file initializes Firebase and the Flutter application.
+/// Lab 5: Firebase Authentication Integration
+void main() async {
+  // Ensures Flutter bindings are initialized before Firebase initialization
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase with platform-specific options (Lab 5: Firebase Integration)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   
   // Run the app
   runApp(const KidsLearningApp());
@@ -41,6 +50,7 @@ class KidsLearningApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const DashboardScreen(),
       },
     );
