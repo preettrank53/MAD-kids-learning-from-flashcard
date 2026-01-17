@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
+import '../services/auth_service.dart';
 
 /// Login Screen - User Authentication
 /// 
@@ -23,6 +24,9 @@ class _LoginScreenState extends State<LoginScreen> {
   // Password visibility toggle state
   bool _isPasswordVisible = false;
   
+  // Loading state for async operations
+  bool _isLoading = false;
+  
   @override
   void dispose() {
     _emailController.dispose();
@@ -31,19 +35,39 @@ class _LoginScreenState extends State<LoginScreen> {
   }
   
   /// Handle login button press
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✅ Login successful! Email: ${_emailController.text}'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
+      // Show loading indicator
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // Call Firebase Authentication Service
+      String? error = await AuthService().loginUser(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
       
-      // Navigate to dashboard using named route (cleaner navigation)
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      // Turn off loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (error == null) {
+        // Success - Navigate to Dashboard
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        // Error - Show error message
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
   
@@ -214,14 +238,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     
                     // ============================================================
-                    // LOGIN BUTTON - Using CustomButton
+                    // LOGIN BUTTON - With loading indicator
                     // ============================================================
-                    Center(
-                      child: CustomButton(
-                        text: 'Login',
-                        onPressed: _handleLogin,
-                      ),
-                    ),
+                    _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          )
+                        : CustomButton(
+                            text: 'Login',
+                            onPressed: _handleLogin,
+                          ),
                     
                     const SizedBox(height: 24),
                     

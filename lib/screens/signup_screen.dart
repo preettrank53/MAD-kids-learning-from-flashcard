@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
+import '../services/auth_service.dart';
 
 /// Registration Screen - New User Sign Up
 /// 
@@ -27,6 +28,9 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   
+  // Loading state for async operations
+  bool _isLoading = false;
+  
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -37,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
   
   /// Handle registration button press
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     // Local validation: Check if passwords match
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,18 +55,37 @@ class _SignupScreenState extends State<SignupScreen> {
     }
     
     if (_formKey.currentState!.validate()) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🎉 Account created! Welcome, ${_fullNameController.text}'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
+      // Show loading indicator
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // Call Firebase Authentication Service
+      String? error = await AuthService().registerUser(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
       
-      // TODO: Firebase registration will be added later
-      // Navigate back to login screen
-      Navigator.pop(context);
+      // Turn off loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (error == null) {
+        // Success - Navigate to Dashboard
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        // Error - Show error message
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -264,12 +287,18 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 32),
                     
                     // ============================================================
-                    // REGISTER BUTTON - Using CustomButton
+                    // REGISTER BUTTON - With loading indicator
                     // ============================================================
-                    CustomButton(
-                      text: 'Register',
-                      onPressed: _handleRegister,
-                    ),
+                    _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          )
+                        : CustomButton(
+                            text: 'Register',
+                            onPressed: _handleRegister,
+                          ),
                     
                     const SizedBox(height: 20),
                     
