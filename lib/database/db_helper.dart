@@ -116,49 +116,149 @@ class DatabaseHelper {
   }
   
   // ============================================================================
-  // CRUD OPERATIONS (To be implemented in next phase)
+  // CRUD OPERATIONS - Lab 6 Phase 2
   // ============================================================================
   
-  // TODO: Phase 2 - Implement Create, Read, Update, Delete methods
-  
-  /// Placeholder for INSERT operation
+  /// CREATE - Inserts a new flashcard into the database
+  /// 
+  /// Returns the id of the newly inserted row
+  /// 
+  /// Example:
+  /// ```dart
+  /// Flashcard card = Flashcard(
+  ///   title: 'Lion',
+  ///   category: 'Animals',
+  ///   colorValue: 0xFFFF6B6B,
+  /// );
+  /// int id = await DatabaseHelper.instance.insertFlashcard(card);
+  /// print('Inserted flashcard with id: $id');
+  /// ```
   Future<int> insertFlashcard(Flashcard flashcard) async {
     Database db = await database;
-    // Implementation coming in Phase 2
-    return await db.insert(tableFlashcards, flashcard.toMap());
+    
+    // Insert the flashcard into the database
+    // conflictAlgorithm: replace ensures duplicate entries are updated
+    int id = await db.insert(
+      tableFlashcards,
+      flashcard.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    
+    print('✅ Inserted flashcard: ${flashcard.title} with id: $id');
+    return id;
   }
   
-  /// Placeholder for SELECT ALL operation
-  Future<List<Flashcard>> getAllFlashcards() async {
+  /// READ - Retrieves all flashcards from the database
+  /// 
+  /// Returns a List of Flashcard objects
+  /// 
+  /// Example:
+  /// ```dart
+  /// List<Flashcard> flashcards = await DatabaseHelper.instance.getFlashcards();
+  /// print('Total flashcards: ${flashcards.length}');
+  /// ```
+  Future<List<Flashcard>> getFlashcards() async {
     Database db = await database;
-    // Implementation coming in Phase 2
+    
+    // Query all rows from the flashcards table
     final List<Map<String, dynamic>> maps = await db.query(tableFlashcards);
-    return List.generate(maps.length, (i) {
+    
+    // Convert the List<Map<String, dynamic>> into a List<Flashcard>
+    List<Flashcard> flashcards = List.generate(maps.length, (i) {
       return Flashcard.fromMap(maps[i]);
     });
+    
+    print('📖 Retrieved ${flashcards.length} flashcards from database');
+    return flashcards;
   }
   
-  /// Placeholder for UPDATE operation
+  /// READ - Retrieves flashcards by category
+  /// 
+  /// Returns a List of Flashcard objects matching the specified category
+  /// 
+  /// Example:
+  /// ```dart
+  /// List<Flashcard> animals = await DatabaseHelper.instance.getFlashcardsByCategory('Animals');
+  /// ```
+  Future<List<Flashcard>> getFlashcardsByCategory(String category) async {
+    Database db = await database;
+    
+    // Query rows where category matches
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableFlashcards,
+      where: '$columnCategory = ?',
+      whereArgs: [category],
+    );
+    
+    // Convert to List<Flashcard>
+    List<Flashcard> flashcards = List.generate(maps.length, (i) {
+      return Flashcard.fromMap(maps[i]);
+    });
+    
+    print('📖 Retrieved ${flashcards.length} flashcards in category: $category');
+    return flashcards;
+  }
+  
+  /// UPDATE - Updates an existing flashcard in the database
+  /// 
+  /// Returns the number of rows affected (should be 1 if successful)
+  /// 
+  /// Example:
+  /// ```dart
+  /// Flashcard card = existingCard.copyWith(title: 'Tiger');
+  /// int result = await DatabaseHelper.instance.updateFlashcard(card);
+  /// print('Updated $result flashcard(s)');
+  /// ```
   Future<int> updateFlashcard(Flashcard flashcard) async {
     Database db = await database;
-    // Implementation coming in Phase 2
-    return await db.update(
+    
+    // Update the flashcard where id matches
+    int count = await db.update(
       tableFlashcards,
       flashcard.toMap(),
       where: '$columnId = ?',
       whereArgs: [flashcard.id],
     );
+    
+    print('✏️ Updated flashcard id ${flashcard.id}: ${flashcard.title} ($count row(s) affected)');
+    return count;
   }
   
-  /// Placeholder for DELETE operation
+  /// DELETE - Removes a flashcard from the database
+  /// 
+  /// Returns the number of rows deleted (should be 1 if successful)
+  /// 
+  /// Example:
+  /// ```dart
+  /// int result = await DatabaseHelper.instance.deleteFlashcard(5);
+  /// print('Deleted $result flashcard(s)');
+  /// ```
   Future<int> deleteFlashcard(int id) async {
     Database db = await database;
-    // Implementation coming in Phase 2
-    return await db.delete(
+    
+    // Delete the flashcard where id matches
+    int count = await db.delete(
       tableFlashcards,
       where: '$columnId = ?',
       whereArgs: [id],
     );
+    
+    print('🗑️ Deleted flashcard id $id ($count row(s) affected)');
+    return count;
+  }
+  
+  /// DELETE ALL - Removes all flashcards from the database
+  /// 
+  /// Returns the number of rows deleted
+  /// 
+  /// WARNING: This will delete ALL flashcards!
+  Future<int> deleteAllFlashcards() async {
+    Database db = await database;
+    
+    int count = await db.delete(tableFlashcards);
+    
+    print('🗑️ Deleted all flashcards ($count row(s) affected)');
+    return count;
   }
   
   // ============================================================================

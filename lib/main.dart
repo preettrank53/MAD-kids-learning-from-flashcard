@@ -11,6 +11,7 @@ import 'screens/dashboard_screen.dart';
 /// 
 /// This file initializes Firebase and the Flutter application.
 /// Lab 5: Firebase Authentication Integration with Session Management
+/// Lab 6: SQLite Database for Flashcard Storage
 void main() async {
   // Ensures Flutter bindings are initialized before Firebase initialization
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Note: SQLite CRUD operations work on Android/iOS only, not on Web
+  // Database operations will be tested through the UI in Phase 3
   
   // Run the app
   runApp(const KidsLearningApp());
