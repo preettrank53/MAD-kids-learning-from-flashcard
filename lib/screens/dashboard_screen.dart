@@ -1,47 +1,34 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../database/db_helper.dart';
+import '../models/flashcard_model.dart';
+import 'add_edit_screen.dart';
 
 /// Dashboard Screen - Main Hub for Kids Learning
 /// 
 /// This screen serves as the central navigation hub where kids can
 /// choose different learning categories (flashcards).
 /// Lab 5 Phase 5: Includes logout functionality
-class DashboardScreen extends StatelessWidget {
+/// Lab 6 Phase 3: Display real flashcards from SQLite database
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  // Mock data for learning categories
-  final List<Map<String, dynamic>> _categories = const [
-    {
-      'name': 'Animals',
-      'icon': Icons.pets,
-      'color': Color(0xFFFF6B6B), // Soft Red
-    },
-    {
-      'name': 'Numbers',
-      'icon': Icons.numbers,
-      'color': Color(0xFF6FB3E0), // Soft Blue
-    },
-    {
-      'name': 'Shapes',
-      'icon': Icons.category,
-      'color': Color(0xFF98D8C8), // Mint Green
-    },
-    {
-      'name': 'Fruits',
-      'icon': Icons.apple,
-      'color': Color(0xFFFFB347), // Pastel Orange
-    },
-    {
-      'name': 'Colors',
-      'icon': Icons.palette,
-      'color': Color(0xFFB19CD9), // Soft Purple
-    },
-    {
-      'name': 'Alphabet',
-      'icon': Icons.abc,
-      'color': Color(0xFFFFD93D), // Bright Yellow
-    },
-  ];
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  /// Fetch flashcards from database
+  Future<List<Flashcard>> _loadFlashcards() async {
+    return await DatabaseHelper.instance.getFlashcards();
+  }
+  
+  /// Refresh the flashcard list
+  void _refreshFlashcards() {
+    setState(() {
+      // Calling setState triggers rebuild and re-executes FutureBuilder
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,28 +100,108 @@ class DashboardScreen extends StatelessWidget {
           ),
           
           // ================================================================
-          // GRID VIEW - Learning Categories (RESPONSIVE)
-          // Uses LayoutBuilder to adjust columns based on screen width
+          // GRID VIEW - Learning Categories (RESPONSIVE + DATABASE)
+          // Uses FutureBuilder to fetch real flashcards from SQLite
           // ================================================================
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Responsive logic: 3 columns for wide screens, 2 for narrow
-                int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+            child: FutureBuilder<List<Flashcard>>(
+              future: _loadFlashcards(),
+              builder: (context, snapshot) {
+                // ============================================================
+                // LOADING STATE
+                // ============================================================
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                }
                 
-                return GridView.count(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16.0,
-                  mainAxisSpacing: 16.0,
-                  padding: const EdgeInsets.all(20.0),
-                  children: _categories
-                      .map((category) => _buildCategoryCard(
-                            context,
-                            name: category['name'],
-                            icon: category['icon'],
-                            color: category['color'],
-                          ))
-                      .toList(),
+                // ============================================================
+                // ERROR STATE
+                // ============================================================
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 80,
+                          color: Colors.red.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading flashcards',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                // ============================================================
+                // EMPTY STATE
+                // ============================================================
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.library_books_outlined,
+                          size: 100,
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'No flashcards yet!',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the + button to create your first flashcard',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                // ============================================================
+                // DATA STATE - Display flashcards in responsive grid
+                // ============================================================
+                List<Flashcard> flashcards = snapshot.data!;
+                
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Responsive logic: 3 columns for wide screens, 2 for narrow
+                    int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+                    
+                    return GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16.0,
+                        mainAxisSpacing: 16.0,
+                      ),
+                      padding: const EdgeInsets.all(20.0),
+                      itemCount: flashcards.length,
+                      itemBuilder: (context, index) {
+                        final flashcard = flashcards[index];
+                        return _buildFlashcardCard(context, flashcard);
+                      },
+                    );
+                  },
                 );
               },
             ),
@@ -143,57 +210,66 @@ class DashboardScreen extends StatelessWidget {
       ),
       
       // ====================================================================
-      // FLOATING ACTION BUTTON - Add new flashcards (SnackBar demo)
+      // FLOATING ACTION BUTTON - Navigate to Add Flashcard screen
       // ====================================================================
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('New Flashcards coming soon!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+          // Navigate to Add/Edit screen and refresh on return
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddEditScreen(),
             ),
-          );
+          ).then((value) {
+            // If returned true (flashcard was saved), refresh the list
+            if (value == true) {
+              _refreshFlashcards();
+            }
+          });
         },
-        tooltip: 'Add Flashcards',
+        tooltip: 'Add Flashcard',
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  /// Helper widget to build individual category cards
+  /// Helper widget to build individual flashcard cards
   /// 
-  /// Creates a colorful, elevated card with an icon and category name.
+  /// Creates a colorful, elevated card displaying flashcard data from database.
   /// Designed to be attractive and easy to tap for kids.
-  Widget _buildCategoryCard(
-    BuildContext context, {
-    required String name,
-    required IconData icon,
-    required Color color,
-  }) {
+  Widget _buildFlashcardCard(BuildContext context, Flashcard flashcard) {
     return Card(
       elevation: 8, // High elevation for prominent shadow
-      shadowColor: color.withOpacity(0.4),
+      shadowColor: Color(flashcard.colorValue).withOpacity(0.4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20), // Rounded corners
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to flashcard screen for this category
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Opening $name flashcards...'),
-              duration: const Duration(seconds: 1),
+          // Navigate to edit screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddEditScreen(flashcard: flashcard),
             ),
-          );
+          ).then((value) {
+            // If returned true (flashcard was updated), refresh the list
+            if (value == true) {
+              _refreshFlashcards();
+            }
+          });
+        },
+        onLongPress: () {
+          // Show delete confirmation dialog
+          _showDeleteDialog(context, flashcard);
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                color,
-                color.withOpacity(0.7),
+                Color(flashcard.colorValue),
+                Color(flashcard.colorValue).withOpacity(0.7),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -203,29 +279,96 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Category Icon
-              Icon(
-                icon,
-                size: 60,
-                color: Colors.white,
+              // Flashcard Title
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  flashcard.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               
-              // Category Name
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              // Category Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                textAlign: TextAlign.center,
+                child: Text(
+                  flashcard.category,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+  
+  /// Show delete confirmation dialog
+  void _showDeleteDialog(BuildContext context, Flashcard flashcard) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Flashcard?'),
+          content: Text('Are you sure you want to delete "${flashcard.title}"?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Delete from database
+                await DatabaseHelper.instance.deleteFlashcard(flashcard.id!);
+                
+                if (!mounted) return;
+                
+                // Close dialog
+                Navigator.pop(context);
+                
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('🗑️ Flashcard deleted'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                
+                // Refresh list
+                _refreshFlashcards();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
