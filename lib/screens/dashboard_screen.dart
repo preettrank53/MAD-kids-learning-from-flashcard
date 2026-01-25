@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../database/db_helper.dart';
+// import '../database/mock_db_helper.dart'; // Web testing
 import '../models/flashcard_model.dart';
 import 'add_edit_screen.dart';
+import 'study_screen.dart';
 
-/// Dashboard Screen - Main Hub for Kids Learning
-/// 
-/// This screen serves as the central navigation hub where kids can
-/// choose different learning categories (flashcards).
-/// Lab 5 Phase 5: Includes logout functionality
-/// Lab 6 Phase 3: Display real flashcards from SQLite database
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -18,357 +15,358 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  /// Fetch flashcards from database
-  Future<List<Flashcard>> _loadFlashcards() async {
-    return await DatabaseHelper.instance.getFlashcards();
+  // Load categories and their flashcards
+  Future<Map<String, List<Flashcard>>> _loadData() async {
+    // Switch to MockDatabaseHelper for Web
+    final allCards = await DatabaseHelper.instance.getFlashcards();
+    // final allCards = await MockDatabaseHelper.instance.getFlashcards();
+    
+    // Group by category
+    Map<String, List<Flashcard>> grouped = {};
+    for (var card in allCards) {
+      if (!grouped.containsKey(card.category)) {
+        grouped[card.category] = [];
+      }
+      grouped[card.category]!.add(card);
+    }
+    return grouped;
+  }
+
+  void _refreshFlashcards() {
+    setState(() {});
   }
   
-  /// Refresh the flashcard list
-  void _refreshFlashcards() {
-    setState(() {
-      // Calling setState triggers rebuild and re-executes FutureBuilder
-    });
+  // Design colors for specific categories
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'animals': return const Color(0xFFE67E22); // Orange
+      case 'numbers': return const Color(0xFF2ECC71); // Green
+      case 'fruits': return const Color(0xFF3498DB); // Blue
+      case 'shapes': return const Color(0xFF9B59B6); // Purple
+      default: return const Color(0xFFFF7675); // Light Red default
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ====================================================================
-      // APP BAR - No back button, logout icon on right
-      // ====================================================================
-      appBar: AppBar(
-        title: const Text('Learning Buddy'),
-        automaticallyImplyLeading: false, // Remove back arrow
-        actions: [
-          // Logout button - Automatically handled by StreamBuilder in main.dart
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              // Call logout service - StreamBuilder will auto-navigate to login
-              await AuthService().logoutUser();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      
-      // ====================================================================
-      // BODY - Welcome header + Grid of categories
-      // ====================================================================
-      body: Column(
-        children: [
-          // ================================================================
-          // WELCOME HEADER - Rounded bottom corners
-          // ================================================================
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello, Little Learner! 👋',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'What do you want to learn today?',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                ),
-              ],
-            ),
-          ),
-          
-          // ================================================================
-          // GRID VIEW - Learning Categories (RESPONSIVE + DATABASE)
-          // Uses FutureBuilder to fetch real flashcards from SQLite
-          // ================================================================
-          Expanded(
-            child: FutureBuilder<List<Flashcard>>(
-              future: _loadFlashcards(),
-              builder: (context, snapshot) {
-                // ============================================================
-                // LOADING STATE
-                // ============================================================
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  );
-                }
-                
-                // ============================================================
-                // ERROR STATE
-                // ============================================================
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
-                          color: Colors.red.shade300,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading flashcards',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          snapshot.error.toString(),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                // ============================================================
-                // EMPTY STATE
-                // ============================================================
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.library_books_outlined,
-                          size: 100,
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'No flashcards yet!',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the + button to create your first flashcard',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                // ============================================================
-                // DATA STATE - Display flashcards in responsive grid
-                // ============================================================
-                List<Flashcard> flashcards = snapshot.data!;
-                
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Responsive logic: 3 columns for wide screens, 2 for narrow
-                    int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-                    
-                    return GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16.0,
-                        mainAxisSpacing: 16.0,
-                      ),
-                      padding: const EdgeInsets.all(20.0),
-                      itemCount: flashcards.length,
-                      itemBuilder: (context, index) {
-                        final flashcard = flashcards[index];
-                        return _buildFlashcardCard(context, flashcard);
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      
-      // ====================================================================
-      // FLOATING ACTION BUTTON - Navigate to Add Flashcard screen
-      // ====================================================================
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to Add/Edit screen and refresh on return
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddEditScreen(),
-            ),
-          ).then((value) {
-            // If returned true (flashcard was saved), refresh the list
-            if (value == true) {
-              _refreshFlashcards();
+      backgroundColor: const Color(0xFFF5F5F7), // Light background
+      body: SafeArea(
+        child: FutureBuilder<Map<String, List<Flashcard>>>(
+          future: _loadData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
             }
-          });
-        },
-        tooltip: 'Add Flashcard',
-        child: const Icon(Icons.add),
+
+            final categories = snapshot.data ?? {};
+            
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  // ========================================================
+                  // HEADER: Greeting + Stars
+                  // ========================================================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hi, Leo! 👋',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2D3436),
+                            ),
+                          ),
+                          Text(
+                            'Ready to play?',
+                            style: GoogleFonts.nunito(
+                              fontSize: 16,
+                              color: const Color(0xFF636E72),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.orange, size: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              '120',
+                              style: GoogleFonts.fredoka(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 30),
+                  
+                  // ========================================================
+                  // SECTION TITLE
+                  // ========================================================
+                  Text(
+                    'YOUR MISSIONS',
+                    style: GoogleFonts.fredoka(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFB2BEC3),
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // ========================================================
+                  // CATEGORY LIST
+                  // ========================================================
+                  Expanded(
+                    child: categories.isEmpty 
+                      ? _buildEmptyState() 
+                      : ListView.separated(
+                          itemCount: categories.length,
+                          separatorBuilder: (c, i) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            String category = categories.keys.elementAt(index);
+                            List<Flashcard> cards = categories[category]!;
+                            return _buildMissionCard(category, cards);
+                          },
+                        ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      
+      // ====================================================================
+      // BOTTOM NAVIGATION (Visual Only)
+      // ====================================================================
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.all(24),
+        height: 70,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D3436), // Dark background
+          borderRadius: BorderRadius.circular(35),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home_rounded, true),
+            _buildNavItem(Icons.menu_book_rounded, false),
+            // Floating Action Button integrated in Nav
+             GestureDetector(
+               onTap: () {
+                 Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (c) => const AddEditScreen()),
+                ).then((val) {
+                  if (val == true) _refreshFlashcards();
+                });
+               },
+               child: Container(
+                 width: 50, 
+                 height: 50,
+                 decoration: const BoxDecoration(
+                   color: Colors.orange,
+                   shape: BoxShape.circle,
+                 ),
+                 child: const Icon(Icons.add, color: Colors.white),
+               ),
+             ),
+            _buildNavItem(Icons.face_rounded, false),
+            _buildNavItem(Icons.settings_rounded, false),
+          ],
+        ),
       ),
     );
   }
 
-  /// Helper widget to build individual flashcard cards
-  /// 
-  /// Creates a colorful, elevated card displaying flashcard data from database.
-  /// Designed to be attractive and easy to tap for kids.
-  Widget _buildFlashcardCard(BuildContext context, Flashcard flashcard) {
-    return Card(
-      elevation: 8, // High elevation for prominent shadow
-      shadowColor: Color(flashcard.colorValue).withOpacity(0.4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // Rounded corners
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.rocket_launch_rounded, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            "No missions yet!",
+            style: GoogleFonts.fredoka(fontSize: 24, color: Colors.grey.shade400),
+          ),
+          const SizedBox(height: 8),
+          Text(
+             "Add some flashcards to start.",
+             style: GoogleFonts.nunito(fontSize: 16, color: Colors.grey.shade400),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () {
-          // Navigate to edit screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddEditScreen(flashcard: flashcard),
-            ),
-          ).then((value) {
-            // If returned true (flashcard was updated), refresh the list
-            if (value == true) {
-              _refreshFlashcards();
-            }
-          });
-        },
-        onLongPress: () {
-          // Show delete confirmation dialog
-          _showDeleteDialog(context, flashcard);
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(flashcard.colorValue),
-                Color(flashcard.colorValue).withOpacity(0.7),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
+    );
+  }
+
+  Widget _buildMissionCard(String category, List<Flashcard> cards) {
+    Color themeColor = _getCategoryColor(category);
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StudyScreen(category: category, flashcards: cards),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Flashcard Title
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  flashcard.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+        );
+      },
+      child: Container(
+        height: 140, // Fixed height for consistency
+        decoration: BoxDecoration(
+          color: themeColor.withOpacity(0.1), // Very light tinted background
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white, width: 2),
+        ),
+        child: Stack(
+          children: [
+            // Background decor
+            Positioned(
+              right: -20,
+              bottom: -20,
+              child: Opacity(
+                opacity: 0.1,
+                child: Icon(Icons.category, size: 150, color: themeColor),
               ),
-              
-              const SizedBox(height: 8),
-              
-              // Category Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  flashcard.category,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                children: [
+                  // Icon Box
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: themeColor.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.star_rounded, // Generic icon for now
+                      size: 40,
+                      color: themeColor,
+                    ),
                   ),
-                ),
+                  
+                  const SizedBox(width: 20),
+                  
+                  // Text Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          category,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF2D3436),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${cards.length} cards', // Dynamic count
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            color: const Color(0xFF636E72),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Fake Progress Bar
+                        Container(
+                          height: 8,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: 0.6, // Fake progress
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: themeColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Play Button
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.play_arrow_rounded, color: themeColor),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
   
-  /// Show delete confirmation dialog
-  void _showDeleteDialog(BuildContext context, Flashcard flashcard) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Flashcard?'),
-          content: Text('Are you sure you want to delete "${flashcard.title}"?'),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Delete from database
-                await DatabaseHelper.instance.deleteFlashcard(flashcard.id!);
-                
-                if (!mounted) return;
-                
-                // Close dialog
-                Navigator.pop(context);
-                
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('🗑️ Flashcard deleted'),
-                    backgroundColor: Colors.orange,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                
-                // Refresh list
-                _refreshFlashcards();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+  Widget _buildNavItem(IconData icon, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: isActive ? const BoxDecoration(
+        color: Colors.orange,
+        shape: BoxShape.circle,
+      ) : null,
+      child: Icon(
+        icon, 
+        color: isActive ? Colors.white : Colors.grey.shade600,
+        size: 28,
+      ),
     );
   }
 }

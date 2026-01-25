@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../database/db_helper.dart';
+// import '../database/mock_db_helper.dart';
 import '../models/flashcard_model.dart';
+import 'dart:math' as math;
 
-/// Add/Edit Flashcard Screen
-/// 
-/// This screen allows users to create new flashcards or edit existing ones.
-/// Lab 6 Phase 3: CREATE operation UI
-/// 
-/// Features:
-/// - Form validation for title and category
-/// - Save flashcard to SQLite database
-/// - Return success status to refresh previous screen
 class AddEditScreen extends StatefulWidget {
-  /// Optional flashcard to edit (null for new flashcard)
   final Flashcard? flashcard;
   
   const AddEditScreen({super.key, this.flashcard});
@@ -22,313 +15,313 @@ class AddEditScreen extends StatefulWidget {
 }
 
 class _AddEditScreenState extends State<AddEditScreen> {
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
-  // Text controllers
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
-  
-  // Loading state
   bool _isLoading = false;
-  
-  // Selected color for the flashcard
-  int _selectedColorValue = 0xFFFF6B6B; // Default: Soft Red
-  
-  // Available colors for flashcards
-  final List<Map<String, dynamic>> _availableColors = const [
-    {'name': 'Red', 'value': 0xFFFF6B6B},
-    {'name': 'Blue', 'value': 0xFF6FB3E0},
-    {'name': 'Green', 'value': 0xFF98D8C8},
-    {'name': 'Orange', 'value': 0xFFFFB347},
-    {'name': 'Purple', 'value': 0xFFB19CD9},
-    {'name': 'Yellow', 'value': 0xFFFFD93D},
+  int _selectedColorValue = 0xFFFF6B6B;
+
+  final List<Color> _colors = [
+    const Color(0xFFFF6B6B), // Red
+    const Color(0xFFFF9F43), // Orange
+    const Color(0xFFFECA57), // Yellow
+    const Color(0xFF1DD1A1), // Green
+    const Color(0xFF54A0FF), // Blue
+    const Color(0xFF5f27cd), // Purple
   ];
   
   @override
   void initState() {
     super.initState();
-    
-    // If editing, populate fields with existing data
     if (widget.flashcard != null) {
       _titleController.text = widget.flashcard!.title;
       _categoryController.text = widget.flashcard!.category;
       _selectedColorValue = widget.flashcard!.colorValue;
     }
   }
-  
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _categoryController.dispose();
-    super.dispose();
-  }
-  
-  /// Handle save button press
-  Future<void> _handleSave() async {
-    // Validate form
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    
-    // Show loading
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      // Create Flashcard object
-      Flashcard flashcard = Flashcard(
-        id: widget.flashcard?.id, // null for new, existing id for edit
-        title: _titleController.text.trim(),
-        category: _categoryController.text.trim(),
-        colorValue: _selectedColorValue,
-      );
-      
-      // Save to database
-      if (widget.flashcard == null) {
-        // CREATE - Insert new flashcard
-        await DatabaseHelper.instance.insertFlashcard(flashcard);
-      } else {
-        // UPDATE - Update existing flashcard
-        await DatabaseHelper.instance.updateFlashcard(flashcard);
-      }
-      
-      // Show success message
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.flashcard == null
-                ? '✅ Flashcard created successfully!'
-                : '✅ Flashcard updated successfully!',
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      
-      // Return true to indicate success and trigger refresh
-      Navigator.pop(context, true);
-      
-    } catch (e) {
-      // Hide loading
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Show error message
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ====================================================================
-      // APP BAR
-      // ====================================================================
+      backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: Text(widget.flashcard == null ? 'Add Flashcard' : 'Edit Flashcard'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: Text(
+          widget.flashcard == null ? 'Create New Card' : 'Edit Card',
+          style: GoogleFonts.fredoka(color: Colors.black, fontSize: 24),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: BackButton(
+          color: Colors.black,
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      
-      // ====================================================================
-      // BODY - Form
-      // ====================================================================
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ============================================================
-                // TITLE FIELD
-                // ============================================================
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: 'Card Title',
-                    hintText: 'e.g., Lion, Apple, Circle',
-                    prefixIcon: Icon(
-                      Icons.title,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // =================================
+              // CARD PREVIEW
+              // =================================
+              Center(
+                child: Container(
+                  width: 300,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    ),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a title';
-                    }
-                    if (value.trim().length < 2) {
-                      return 'Title must be at least 2 characters';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // ============================================================
-                // CATEGORY FIELD
-                // ============================================================
-                TextFormField(
-                  controller: _categoryController,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    hintText: 'e.g., Animals, Fruits, Shapes',
-                    prefixIcon: Icon(
-                      Icons.category,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a category';
-                    }
-                    if (value.trim().length < 2) {
-                      return 'Category must be at least 2 characters';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 30),
-                
-                // ============================================================
-                // COLOR PICKER
-                // ============================================================
-                Text(
-                  'Choose Color:',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _availableColors.map((colorData) {
-                    bool isSelected = _selectedColorValue == colorData['value'];
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedColorValue = colorData['value'] as int;
-                        });
-                      },
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Color(colorData['value'] as int),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.black
-                                : Colors.transparent,
-                            width: 3,
+                  child: Stack(
+                    children: [
+                      // Decorative corner
+                      Positioned(
+                        top: -20,
+                        right: -20,
+                        child: Transform.rotate(
+                          angle: 0.5,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color(_selectedColorValue).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ]
-                              : [],
                         ),
-                        child: isSelected
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 30,
-                              )
-                            : null,
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Color(_selectedColorValue).withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.wb_incandescent_rounded, 
+                              color: Color(_selectedColorValue), 
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              _titleController.text.isEmpty ? 'Your Word' : _titleController.text,
+                              style: GoogleFonts.fredoka(
+                                fontSize: 28,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _categoryController.text.isEmpty ? 'Category' : _categoryController.text.toUpperCase(),
+                            style: GoogleFonts.nunito(
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 40),
+              
+              // =================================
+              // INPUT FIELDS
+              // =================================
+              Text(
+                'Card Details',
+                style: GoogleFonts.fredoka(
+                  fontSize: 18,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Title Input
+              _buildInputField(
+                controller: _titleController,
+                hint: 'What word?',
+                icon: Icons.edit_rounded,
+                onChanged: (val) => setState(() {}),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Category Input
+              _buildInputField(
+                controller: _categoryController,
+                hint: 'Category (e.g. Animals)',
+                icon: Icons.category_rounded,
+                onChanged: (val) => setState(() {}),
+              ),
+              
+              const SizedBox(height: 30),
+              
+              // =================================
+              // COLOR PICKER
+              // =================================
+              Text(
+                'Pick a Color',
+                style: GoogleFonts.fredoka(
+                  fontSize: 18,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _colors.map((color) {
+                    bool isSelected = _selectedColorValue == color.value;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedColorValue = color.value),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+                          boxShadow: isSelected ? [
+                             BoxShadow(color: color.withOpacity(0.5), blurRadius: 10, offset: const Offset(0,4))
+                          ] : null,
+                        ),
+                        child: isSelected ? const Icon(Icons.check_rounded, color: Colors.white, size: 24) : null,
                       ),
                     );
                   }).toList(),
                 ),
-                
-                const SizedBox(height: 40),
-                
-                // ============================================================
-                // SAVE BUTTON
-                // ============================================================
-                _isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      )
-                    : ElevatedButton(
-                        onPressed: _handleSave,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+              ),
+              
+              const SizedBox(height: 40),
+              
+              // =================================
+              // SAVE BUTTON
+              // =================================
+               SizedBox(
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black87,
+                    elevation: 10,
+                    shadowColor: Colors.black26,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(widget.flashcard == null ? Icons.add_rounded : Icons.save_rounded, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Text(
+                            widget.flashcard == null ? 'Create Card' : 'Save Changes',
+                            style: GoogleFonts.fredoka(fontSize: 20, color: Colors.white),
                           ),
-                          elevation: 5,
-                        ),
-                        child: Text(
-                          widget.flashcard == null ? 'Save Flashcard' : 'Update Flashcard',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        ],
                       ),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller, 
+    required String hint, 
+    required IconData icon,
+    Function(String)? onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        onChanged: onChanged,
+        style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 18),
+          prefixIcon: Icon(icon, color: Colors.grey.shade400),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) return 'Required';
+          return null;
+        },
+      ),
+    );
+  }
+
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final card = Flashcard(
+        id: widget.flashcard?.id,
+        title: _titleController.text.trim(),
+        category: _categoryController.text.trim(), // Keep original case or title case
+        colorValue: _selectedColorValue,
+      );
+
+      if (widget.flashcard == null) {
+        await DatabaseHelper.instance.insertFlashcard(card);
+        // await MockDatabaseHelper.instance.insertFlashcard(card);
+      } else {
+        await DatabaseHelper.instance.updateFlashcard(card);
+        // await MockDatabaseHelper.instance.updateFlashcard(card);
+      }
+
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+         setState(() => _isLoading = false);
+      }
+    }
   }
 }
