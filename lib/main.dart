@@ -5,7 +5,8 @@ import 'firebase_options.dart';
 import 'core/theme/theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/dashboard_screen.dart';
+// import 'screens/dashboard_screen.dart'; // No longer the direct home
+import 'screens/main_shell.dart'; // New Main Shell with Navigation
 
 /// Main entry point of the Kids Learning Flashcards App
 /// 
@@ -68,9 +69,9 @@ class KidsLearningApp extends StatelessWidget {
             );
           }
           
-          // User is logged in - Show Dashboard
+          // User is logged in - Show Main Shell (with Bottom Navigation)
           if (snapshot.hasData) {
-            return const DashboardScreen();
+            return const MainShell();
           }
           
           // User is logged out - Show Login Screen
