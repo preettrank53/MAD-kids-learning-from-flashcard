@@ -62,14 +62,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: SwitchListTile(
                 title: const Text('Background Music'),
                 subtitle: const Text('Play gentle music while learning'),
                 value: _isMusicOn,
-                secondary: const Icon(Icons.music_note_rounded, color: AppTheme.primaryColor),
+                secondary: const Icon(Icons.music_note_rounded, color: AppTheme.primaryAccent),
                 onChanged: (bool value) {
                   setState(() {
                     _isMusicOn = value;
@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -101,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                        Text('Daily Card Goal', style: TextStyle(color: Colors.grey.shade700)),
                        Text(
                          '${_dailyGoal.round()} Cards', 
-                         style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                         style: const TextStyle(color: AppTheme.primaryAccent, fontWeight: FontWeight.bold),
                        ),
                      ],
                    ),
@@ -178,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Text(
       title.toUpperCase(),
       style: GoogleFonts.fredoka(
-        color: AppTheme.primaryColor,
+        color: AppTheme.primaryAccent,
         fontWeight: FontWeight.w600,
         fontSize: 18,
         letterSpacing: 1.0,

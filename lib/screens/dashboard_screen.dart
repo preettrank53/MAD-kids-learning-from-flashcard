@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/auth_service.dart';
-import '../database/db_helper.dart';
-// import '../database/mock_db_helper.dart'; // Web testing
-import '../models/flashcard_model.dart';
-import 'add_edit_screen.dart';
+import '../models/flashcard_model.dart'; 
+import '../database/db_helper.dart'; 
+import '../widgets/clay_card.dart';
+import '../core/theme/theme.dart';
 import 'study_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -15,183 +14,246 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Load categories and their flashcards
-  Future<Map<String, List<Flashcard>>> _loadData() async {
-    // Switch to MockDatabaseHelper for Web
-    final allCards = await DatabaseHelper.instance.getFlashcards();
-    // final allCards = await MockDatabaseHelper.instance.getFlashcards();
-    
-    // Group by category
-    Map<String, List<Flashcard>> grouped = {};
-    for (var card in allCards) {
-      if (!grouped.containsKey(card.category)) {
-        grouped[card.category] = [];
-      }
-      grouped[card.category]!.add(card);
-    }
-    return grouped;
+  // Accessing the singleton instance of the database helper
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance; 
+  Map<String, List<Flashcard>> categories = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshFlashcards();
   }
 
-  void _refreshFlashcards() {
-    setState(() {});
-  }
-  
-  // Design colors for specific categories
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'animals': return const Color(0xFFE67E22); // Orange
-      case 'numbers': return const Color(0xFF2ECC71); // Green
-      case 'fruits': return const Color(0xFF3498DB); // Blue
-      case 'shapes': return const Color(0xFF9B59B6); // Purple
-      default: return const Color(0xFFFF7675); // Light Red default
+  Future<void> _refreshFlashcards() async {
+    setState(() => isLoading = true);
+    try {
+      final data = await _dbHelper.getFlashcards();
+      Map<String, List<Flashcard>> grouped = {};
+      for (var f in data) {
+        if (!grouped.containsKey(f.category)) {
+          grouped[f.category] = [];
+        }
+        grouped[f.category]!.add(f);
+      }
+      setState(() {
+        categories = grouped;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading flashcards: $e");
+      setState(() => isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7), // Light background
+      backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: FutureBuilder<Map<String, List<Flashcard>>>(
-          future: _loadData(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final categories = snapshot.data ?? {};
-            
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // ========================================================
-                  // HEADER: Greeting + Stars
-                  // ========================================================
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hi, Leo! 👋',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF2D3436),
-                            ),
-                          ),
-                          Text(
-                            'Ready to play?',
-                            style: GoogleFonts.nunito(
-                              fontSize: 16,
-                              color: const Color(0xFF636E72),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+        bottom: false, // Let content flow behind floating nav
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. GREETING CARD
+              Padding(
+                padding: const EdgeInsets.only(bottom: 30),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hi, Leo!',
+                          style: Theme.of(context).textTheme.displayLarge,
                         ),
-                        child: Row(
+                        Text(
+                          'Ready to learn?',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.lightText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const ClayCard(
+                      height: 50,
+                      width: 50,
+                      borderRadius: 25,
+                      color: AppTheme.backgroundColor,
+                      child: Icon(Icons.face_rounded, color: AppTheme.primaryAccent),
+                    )
+                  ],
+                ),
+              ),
+
+              // 2. BENTO GRID - Daily Goals & Progress
+              SizedBox(
+                height: 240,
+                child: Row(
+                  children: [
+                    // Large "Daily Mission" Tile (Left)
+                    Expanded(
+                      flex: 4,
+                      child: ClayCard(
+                        height: double.infinity,
+                        color: AppTheme.primaryAccent,
+                        borderRadius: 30,
+                        child: Stack(
                           children: [
-                            const Icon(Icons.star_rounded, color: Colors.orange, size: 24),
-                            const SizedBox(width: 8),
-                            Text(
-                              '120',
-                              style: GoogleFonts.fredoka(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange,
+                            Positioned(
+                              right: -10,
+                              bottom: -10,
+                              child: Icon(
+                                Icons.rocket_launch_rounded, 
+                                size: 100, 
+                                color: Colors.white.withOpacity(0.2)
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Text('DAILY MISSION', 
+                                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)
+                                    ),
+                                  ),
+                                  
+                                  const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Space', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                      Text('Explorer', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  
+                                  const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 30),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // ========================================================
-                  // SECTION TITLE
-                  // ========================================================
-                  Text(
-                    'YOUR MISSIONS',
-                    style: GoogleFonts.fredoka(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFB2BEC3),
-                      letterSpacing: 1.5,
                     ),
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // ========================================================
-                  // CATEGORY LIST
-                  // ========================================================
-                  Expanded(
-                    child: categories.isEmpty 
-                      ? _buildEmptyState() 
-                      : ListView.separated(
-                          itemCount: categories.length,
-                          separatorBuilder: (c, i) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            String category = categories.keys.elementAt(index);
-                            List<Flashcard> cards = categories[category]!;
-                            return _buildMissionCard(category, cards);
-                          },
-                        ),
-                  ),
-                ],
+                    const SizedBox(width: 15),
+                    // Two Smaller Tiles (Right)
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          // Top Right: Progress
+                          Expanded(
+                            child: ClayCard(
+                              width: double.infinity,
+                              color: AppTheme.successColor,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 32),
+                                    const SizedBox(height: 5),
+                                    Text('12/20', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          // Bottom Right: Streak
+                          Expanded(
+                            child: ClayCard(
+                              width: double.infinity,
+                              color: AppTheme.secondaryAccent,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 32),
+                                    const SizedBox(height: 5),
+                                    Text('3 Day', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          },
+
+              const SizedBox(height: 30),
+
+              // 3. CATEGORIES Header
+              Text(
+                'Collections', 
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 22),
+              ),
+              const SizedBox(height: 20),
+
+              // 4. CATEGORIES Dynamic Grid
+              isLoading 
+              ? const Center(child: CircularProgressIndicator()) 
+              : categories.isEmpty 
+                  ? _buildEmptyState()
+                  : GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                        childAspectRatio: 0.9,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        String category = categories.keys.elementAt(index);
+                        List<Flashcard> cards = categories[category]!;
+                        return _buildCategoryTile(category, cards, index);
+                      },
+                    ),
+
+              // Extra space for floating nav
+              const SizedBox(height: 120),
+            ],
+          ),
         ),
       ),
-
     );
   }
-
+  
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.rocket_launch_rounded, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            "No missions yet!",
-            style: GoogleFonts.fredoka(fontSize: 24, color: Colors.grey.shade400),
-          ),
-          const SizedBox(height: 8),
-          Text(
-             "Add some flashcards to start.",
-             style: GoogleFonts.nunito(fontSize: 16, color: Colors.grey.shade400),
-          ),
-        ],
+    return ClayCard(
+      height: 200,
+      width: double.infinity,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.category_rounded, size: 50, color: AppTheme.lightText.withOpacity(0.5)),
+            const SizedBox(height: 10),
+            Text("No flashcards found", style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMissionCard(String category, List<Flashcard> cards) {
-    Color themeColor = _getCategoryColor(category);
-    
+  Widget _buildCategoryTile(String category, List<Flashcard> cards, int index) {
+    List<Color> icons = [AppTheme.warningColor, AppTheme.primaryAccent, AppTheme.secondaryAccent, AppTheme.successColor];
+    Color iconColor = icons[index % icons.length];
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -201,118 +263,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         );
       },
-      child: Container(
-        height: 140, // Fixed height for consistency
-        decoration: BoxDecoration(
-          color: themeColor.withOpacity(0.1), // Very light tinted background
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-        child: Stack(
-          children: [
-            // Background decor
-            Positioned(
-              right: -20,
-              bottom: -20,
-              child: Opacity(
-                opacity: 0.1,
-                child: Icon(Icons.category, size: 150, color: themeColor),
+      child: ClayCard(
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Icon
+              Container(
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Icon(Icons.star_rounded, color: iconColor, size: 30),
               ),
-            ),
-            
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
+              
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon Box
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: themeColor.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                  Text(
+                    category,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: AppTheme.darkText,
                     ),
-                    child: Icon(
-                      Icons.star_rounded, // Generic icon for now
-                      size: 40,
-                      color: themeColor,
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  
-                  const SizedBox(width: 20),
-                  
-                  // Text Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          category,
-                          style: GoogleFonts.fredoka(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF2D3436),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${cards.length} cards', // Dynamic count
-                          style: GoogleFonts.nunito(
-                            fontSize: 14,
-                            color: const Color(0xFF636E72),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // Fake Progress Bar
-                        Container(
-                          height: 8,
-                          width: 150,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: 0.6, // Fake progress
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: themeColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  Text(
+                    '${cards.length} Cards',
+                    style: GoogleFonts.poppins(
+                      color: AppTheme.lightText,
+                      fontSize: 12,
                     ),
-                  ),
-                  
-                  // Play Button
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.play_arrow_rounded, color: themeColor),
                   ),
                 ],
-              ),
-            ),
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );
   }
-
 }

@@ -1,10 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart';
 import 'manage_cards_screen.dart';
+import '../widgets/clay_card.dart';
+import '../core/theme/theme.dart';
 
-// Main Shell - The new home of the app containing the navigation
-// This screen wraps the Dashboard and other future screens with a BottomNavigationBar
+// Main Shell - The Floating Island Navigation
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -13,22 +15,14 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  // Track the active tab index
   int _selectedIndex = 0;
 
-  // List of pages to display based on selection
   final List<Widget> _pages = [
-    // Item 1: Home (The Dashboard Grid)
-    DashboardScreen(),
-    
-    // Item 2: Manage (Manage Cards Screen)
-    ManageCardsScreen(),
-    
-    // Item 3: Settings (Parent Zone)
-    SettingsScreen(),
+    const DashboardScreen(),
+    const ManageCardsScreen(),
+    const SettingsScreen(),
   ];
 
-  // Handle tap on navigation items
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -38,44 +32,102 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Display the selected page body
+      extendBody: true, // Critical for floating nav bar
       body: _pages[_selectedIndex],
-      
-      // Step 2: Implement Bottom Navigation Bar
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Ensure all items are shown properly
-        backgroundColor: Colors.white, // Background Color: White
-        elevation: 10, // Slight shadow for lift
-        
-        // Tab Selection Colors
-        selectedItemColor: const Color(0xFFFFD300), // Bold Yellow
-        unselectedItemColor: const Color(0xFF007AFF), // Electric Blue
-        
-        // Label Visibility
-        showSelectedLabels: true,
-        showUnselectedLabels: false, // Set Show Unselected Labels to false for clean look
-        
-        // Current index
-        currentIndex: _selectedIndex,
-        
-        // Tap Handler
-        onTap: _onItemTapped,
-        
-        // Navigation Items
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_rounded),
-            label: 'Manage',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        height: 100, // Sufficient space for the floating island
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        alignment: Alignment.bottomCenter,
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            // Glassmorphic Island
+            ClipRRect(
+              borderRadius: BorderRadius.circular(50), // Stadium Shape
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.5),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryAccent.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Left Item: Home
+                      _buildNavItem(Icons.grid_view_rounded, 0),
+                      
+                      // Spacer for the center FAB
+                      const SizedBox(width: 60),
+                      
+                      // Right Item: Settings (or Manage)
+                      // Original code had 3 items: Home, Manage, Settings.
+                      // Let's put Manage on the right for now, or match the user request.
+                      _buildNavItem(Icons.settings_rounded, 2),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            // Breaking Boundary Floating Action Button (Clay Style)
+            Positioned(
+              top: -15, // Moves it up to break the boundary
+              child: GestureDetector(
+                onTap: () {
+                   setState(() {
+                     _selectedIndex = 1; // Go to Manage Cards
+                   });
+                },
+                child: ClayCard(
+                  width: 75,
+                  height: 75,
+                  borderRadius: 75,
+                  color: AppTheme.primaryAccent,
+                  depth: 15,
+                  child: const Icon(
+                    Icons.add_rounded, 
+                    color: Colors.white, 
+                    size: 40
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Container(
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryAccent.withOpacity(0.1) : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? AppTheme.primaryAccent : Colors.grey.shade400,
+          size: 30, // Large icons
+        ),
       ),
     );
   }
