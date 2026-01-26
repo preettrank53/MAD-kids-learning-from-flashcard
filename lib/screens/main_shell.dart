@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart';
+import 'manage_cards_screen.dart';
 
 // Main Shell - The new home of the app containing the navigation
 // This screen wraps the Dashboard and other future screens with a BottomNavigationBar
@@ -20,8 +21,8 @@ class _MainShellState extends State<MainShell> {
     // Item 1: Home (The Dashboard Grid)
     const DashboardScreen(),
     
-    // Item 2: Manage (Placeholder for Manage Cards)
-    const Placeholder(),
+    // Item 2: Manage (Manage Cards Screen)
+    const ManageCardsScreen(),
     
     // Item 3: Settings (Parent Zone)
     const SettingsScreen(),
