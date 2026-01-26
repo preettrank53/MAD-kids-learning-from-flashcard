@@ -19,13 +19,13 @@ class _MainShellState extends State<MainShell> {
   // List of pages to display based on selection
   final List<Widget> _pages = [
     // Item 1: Home (The Dashboard Grid)
-    const DashboardScreen(),
+    DashboardScreen(),
     
     // Item 2: Manage (Manage Cards Screen)
-    const ManageCardsScreen(),
+    ManageCardsScreen(),
     
     // Item 3: Settings (Parent Zone)
-    const SettingsScreen(),
+    SettingsScreen(),
   ];
 
   // Handle tap on navigation items
