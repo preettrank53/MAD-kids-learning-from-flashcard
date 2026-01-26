@@ -164,47 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         ),
       ),
-      
-      // ====================================================================
-      // BOTTOM NAVIGATION (Visual Only)
-      // ====================================================================
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(24),
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF2D3436), // Dark background
-          borderRadius: BorderRadius.circular(35),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, true),
-            _buildNavItem(Icons.menu_book_rounded, false),
-            // Floating Action Button integrated in Nav
-             GestureDetector(
-               onTap: () {
-                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (c) => const AddEditScreen()),
-                ).then((val) {
-                  if (val == true) _refreshFlashcards();
-                });
-               },
-               child: Container(
-                 width: 50, 
-                 height: 50,
-                 decoration: const BoxDecoration(
-                   color: Colors.orange,
-                   shape: BoxShape.circle,
-                 ),
-                 child: const Icon(Icons.add, color: Colors.white),
-               ),
-             ),
-            _buildNavItem(Icons.face_rounded, false),
-            _buildNavItem(Icons.settings_rounded, false),
-          ],
-        ),
-      ),
+
     );
   }
 
@@ -354,19 +314,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-  
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: isActive ? const BoxDecoration(
-        color: Colors.orange,
-        shape: BoxShape.circle,
-      ) : null,
-      child: Icon(
-        icon, 
-        color: isActive ? Colors.white : Colors.grey.shade600,
-        size: 28,
-      ),
-    );
-  }
+
 }

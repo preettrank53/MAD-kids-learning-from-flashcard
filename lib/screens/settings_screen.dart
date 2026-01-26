@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/theme.dart';
 
 /// Settings Screen - Parent Zone
 /// 
@@ -19,10 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _dailyGoal = 10;
   String? _difficultyLevel = 'Preschool';
 
-  // Theme Constants based on "Strict Blue/Yellow Theme"
-  final Color electricBlue = const Color(0xFF007AFF);
-  final Color boldYellow = const Color(0xFFFFD300);
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -32,15 +29,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          'Parent Zone',
-          style: GoogleFonts.fredoka(color: Colors.black, fontSize: 24),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text('Parent Zone'),
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -56,19 +46,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Child's Name",
-                labelStyle: TextStyle(color: electricBlue),
-                prefixIcon: Icon(Icons.face_rounded, color: electricBlue),
-                // Blue Border Styling
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: electricBlue.withOpacity(0.3), width: 1.5),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: electricBlue, width: 2),
-                ),
+                prefixIcon: Icon(Icons.face_rounded),
               ),
             ),
 
@@ -82,15 +62,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: electricBlue.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: SwitchListTile(
                 title: const Text('Background Music'),
                 subtitle: const Text('Play gentle music while learning'),
                 value: _isMusicOn,
-                activeColor: boldYellow, // Yellow when active
-                secondary: Icon(Icons.music_note_rounded, color: electricBlue),
+                secondary: const Icon(Icons.music_note_rounded, color: AppTheme.primaryColor),
                 onChanged: (bool value) {
                   setState(() {
                     _isMusicOn = value;
@@ -110,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: electricBlue.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -122,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                        Text('Daily Card Goal', style: TextStyle(color: Colors.grey.shade700)),
                        Text(
                          '${_dailyGoal.round()} Cards', 
-                         style: TextStyle(color: electricBlue, fontWeight: FontWeight.bold),
+                         style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
                        ),
                      ],
                    ),
@@ -132,8 +111,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     max: 50,
                     divisions: 9, // Steps of 5 (approx)
                     label: _dailyGoal.round().toString(),
-                    activeColor: boldYellow, // Yellow when active
-                    inactiveColor: Colors.grey.shade200,
                     onChanged: (double value) {
                       setState(() {
                         _dailyGoal = value;
@@ -154,19 +131,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             DropdownButtonFormField<String>(
               value: _difficultyLevel,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Difficulty Level',
-                labelStyle: TextStyle(color: electricBlue),
-                prefixIcon: Icon(Icons.school_rounded, color: electricBlue),
-                // Blue Border Styling
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: electricBlue.withOpacity(0.3), width: 1.5),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: electricBlue, width: 2),
-                ),
+                prefixIcon: Icon(Icons.school_rounded),
               ),
               items: ['Toddler', 'Preschool', 'Kindergarten']
                   .map((String level) {
@@ -194,13 +161,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SnackBar(content: Text('Settings Saved!')),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: electricBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 5,
-                ),
                 child: Text(
                   'Save Changes',
                   style: GoogleFonts.fredoka(fontSize: 20, color: Colors.white),
@@ -213,15 +173,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Helper mainly for Section Headers (Strict Blue)
+  /// Helper mainly for Section Headers
   Widget _buildSectionHeader(String title) {
     return Text(
       title.toUpperCase(),
-      style: GoogleFonts.nunito(
-        color: electricBlue,
-        fontWeight: FontWeight.w900,
-        fontSize: 14,
-        letterSpacing: 1.2,
+      style: GoogleFonts.fredoka(
+        color: AppTheme.primaryColor,
+        fontWeight: FontWeight.w600,
+        fontSize: 18,
+        letterSpacing: 1.0,
       ),
     );
   }
