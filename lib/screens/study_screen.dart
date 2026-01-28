@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../models/flashcard_model.dart';
+import '../services/tts_service.dart';
+import '../services/srs_service.dart'; // Ready for future logic
 
 class StudyScreen extends StatefulWidget {
   final String category;
@@ -25,12 +29,23 @@ class _StudyScreenState extends State<StudyScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    // Speak the first card after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _speakCurrentCard();
+    });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+  
+  void _speakCurrentCard() {
+    if (_currentIndex < widget.flashcards.length) {
+      final text = widget.flashcards[_currentIndex].title;
+      context.read<TtsService>().speak(text);
+    }
   }
 
   void _nextCard() {
@@ -71,7 +86,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     backgroundColor: Colors.white,
                     child: IconButton(
                       icon: const Icon(Icons.close, color: Colors.orange),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => context.pop(), // GoRouter pop
                     ),
                   ),
                   
@@ -137,6 +152,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     _currentIndex = index;
                     _isFlipped = false;
                   });
+                  _speakCurrentCard(); // Auto-speak on slide change
                 },
                 itemCount: widget.flashcards.length,
                 itemBuilder: (context, index) {
@@ -201,7 +217,7 @@ class _StudyScreenState extends State<StudyScreen> {
                     )
                   else
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => context.pop(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -235,80 +251,94 @@ class _StudyScreenState extends State<StudyScreen> {
           setState(() {
             _isFlipped = !_isFlipped;
           });
+          // Speak when flipped (if showing answer) or just re-speak title?
+          // Let's re-speak title for reinforcement.
+          _speakCurrentCard();
         },
-        child: Container(
-          width: 320,
-          height: 480,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Speaker / Audio Icon
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.blue.shade50,
-                    child: Icon(Icons.volume_up, color: Colors.orange.shade400),
+        child: Hero(
+          tag: 'card_${card.title}', // Hero animation tag
+          child: Container(
+            width: 320,
+            height: 480,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Speaker / Audio Icon
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GestureDetector(
+                      onTap: _speakCurrentCard,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.blue.shade50,
+                        child: Icon(Icons.volume_up, color: Colors.orange.shade400),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              
-              const Spacer(),
-              
-              // Image/Icon Area
-              Container(
-                height: 200,
-                width: 200,
-                decoration: BoxDecoration(
-                  color: Color(card.colorValue).withOpacity(0.2),
-                  shape: BoxShape.circle,
+                
+                const Spacer(),
+                
+                // Image/Icon Area
+                Container(
+                  height: 200,
+                  width: 200,
+                  decoration: BoxDecoration(
+                    color: Color(card.colorValue).withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.star, // Placeholder icon
+                    size: 80,
+                    color: Color(card.colorValue),
+                  ),
                 ),
-                child: Icon(
-                  Icons.star, // Placeholder icon
-                  size: 80,
-                  color: Color(card.colorValue),
+                
+                const SizedBox(height: 30),
+                
+                // Title
+                Material( // Material wrapper for text inside Hero
+                  color: Colors.transparent,
+                  child: Text(
+                    card.title.toUpperCase(),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 30),
-              
-              // Title
-              Text(
-                card.title.toUpperCase(),
-                style: GoogleFonts.fredoka(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.orange.shade800,
+                
+                const SizedBox(height: 8),
+                
+                // Subtitle
+                Material(
+                  color: Colors.transparent,
+                  child: Text(
+                    'Tap to flip', 
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      color: Colors.grey.shade400,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Subtitle
-              Text(
-                // Just dummy text since model doesn't have subtitle
-                'Tap to flip', 
-                style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              
-              const Spacer(flex: 2),
-            ],
+                
+                const Spacer(flex: 2),
+              ],
+            ),
           ),
         ),
       ),

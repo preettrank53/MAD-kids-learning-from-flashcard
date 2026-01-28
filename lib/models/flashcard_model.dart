@@ -22,69 +22,69 @@ class Flashcard {
   /// Color value stored as an integer (e.g., 0xFFFF6B6B for red)
   /// Used to display colorful cards in the UI
   int colorValue;
+  // ============================================================================
+  // SRS PROPERTIES - Phase 2: Spaced Repetition System
+  // ============================================================================
   
+  /// SRS Ease Factor (starts at 2.5)
+  double easeFactor;
+  
+  /// Interval in days until next review
+  int interval;
+  
+  /// Number of successful reviews in a row
+  int repetitions;
+  
+  /// Date when the card is due for review
+  DateTime dueDate;
+
   // ============================================================================
   // CONSTRUCTOR
   // ============================================================================
   
   /// Creates a Flashcard object
-  /// 
-  /// [id] is optional - null when creating a new flashcard
-  /// [title], [category], and [colorValue] are required
   Flashcard({
     this.id,
     required this.title,
     required this.category,
     required this.colorValue,
-  });
+    this.easeFactor = 2.5,
+    this.interval = 0,
+    this.repetitions = 0,
+    DateTime? dueDate,
+  }) : dueDate = dueDate ?? DateTime.now(); // Default to now (ready to learn)
   
   // ============================================================================
   // DATABASE CONVERSION METHODS
   // ============================================================================
   
   /// Converts the Flashcard object to a Map for database insertion/update
-  /// 
-  /// Used by SQLite operations (insert, update)
-  /// 
-  /// Example:
-  /// ```dart
-  /// Flashcard card = Flashcard(
-  ///   title: 'Lion',
-  ///   category: 'Animals',
-  ///   colorValue: 0xFFFF6B6B,
-  /// );
-  /// Map<String, dynamic> map = card.toMap();
-  /// // Result: {'title': 'Lion', 'category': 'Animals', 'colorValue': 4294923067}
-  /// ```
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'title': title,
       'category': category,
       'colorValue': colorValue,
+      'easeFactor': easeFactor,
+      'interval': interval,
+      'repetitions': repetitions,
+      'dueDate': dueDate.millisecondsSinceEpoch,
     };
   }
   
   /// Factory constructor to create a Flashcard object from database Map
-  /// 
-  /// Used when retrieving data from SQLite
-  /// 
-  /// Example:
-  /// ```dart
-  /// Map<String, dynamic> dbMap = {
-  ///   'id': 1,
-  ///   'title': 'Lion',
-  ///   'category': 'Animals',
-  ///   'colorValue': 4294923067,
-  /// };
-  /// Flashcard card = Flashcard.fromMap(dbMap);
-  /// ```
   factory Flashcard.fromMap(Map<String, dynamic> map) {
     return Flashcard(
       id: map['id'] as int?,
       title: map['title'] as String,
       category: map['category'] as String,
       colorValue: map['colorValue'] as int,
+      easeFactor: map['easeFactor'] as double? ?? 2.5,
+      interval: map['interval'] as int? ?? 0,
+      repetitions: map['repetitions'] as int? ?? 0,
+      dueDate: map['dueDate'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['dueDate'] as int)
+          : null,
     );
   }
   
@@ -92,31 +92,31 @@ class Flashcard {
   // HELPER METHODS
   // ============================================================================
   
-  /// Returns a string representation of the Flashcard object
-  /// Useful for debugging
   @override
   String toString() {
-    return 'Flashcard{id: $id, title: $title, category: $category, colorValue: $colorValue}';
+    return 'Flashcard{id: $id, title: $title, category: $category, ease: $easeFactor, due: $dueDate}';
   }
   
   /// Creates a copy of this Flashcard with optional field updates
-  /// 
-  /// Example:
-  /// ```dart
-  /// Flashcard original = Flashcard(title: 'Lion', category: 'Animals', colorValue: 0xFF);
-  /// Flashcard updated = original.copyWith(title: 'Tiger');
-  /// ```
   Flashcard copyWith({
     int? id,
     String? title,
     String? category,
     int? colorValue,
+    double? easeFactor,
+    int? interval,
+    int? repetitions,
+    DateTime? dueDate,
   }) {
     return Flashcard(
       id: id ?? this.id,
       title: title ?? this.title,
       category: category ?? this.category,
       colorValue: colorValue ?? this.colorValue,
+      easeFactor: easeFactor ?? this.easeFactor,
+      interval: interval ?? this.interval,
+      repetitions: repetitions ?? this.repetitions,
+      dueDate: dueDate ?? this.dueDate,
     );
   }
 }

@@ -32,8 +32,8 @@ class DatabaseHelper {
   /// Database name stored on the device
   static const String _databaseName = 'kids_learning.db';
   
-  /// Database version - increment when schema changes
-  static const int _databaseVersion = 1;
+  /// Database version - Incrementing to 2 for Phase 2 (SRS Features)
+  static const int _databaseVersion = 2;
   
   /// Table name for flashcards
   static const String tableFlashcards = 'flashcards';
@@ -47,16 +47,17 @@ class DatabaseHelper {
   static const String columnCategory = 'category';
   static const String columnColorValue = 'colorValue';
   
+  // Phase 2 Columns (SRS)
+  static const String columnEaseFactor = 'easeFactor';
+  static const String columnInterval = 'interval';
+  static const String columnRepetitions = 'repetitions';
+  static const String columnDueDate = 'dueDate';
+  
   // ============================================================================
   // DATABASE GETTER - Lazy initialization
   // ============================================================================
   
   /// Returns the database instance, creating it if it doesn't exist
-  /// 
-  /// Example:
-  /// ```dart
-  /// Database db = await DatabaseHelper.instance.database;
-  /// ```
   Future<Database> get database async {
     // If database already exists, return it
     if (_database != null) return _database!;
@@ -71,48 +72,77 @@ class DatabaseHelper {
   // ============================================================================
   
   /// Initializes the database
-  /// 
-  /// Creates the database file at the appropriate path and executes
-  /// the schema creation SQL commands
   Future<Database> _initDB() async {
-    // Get the default database location for the platform
-    // On Android: /data/data/<package_name>/databases/
-    // On iOS: <Application Documents Directory>/
     String path = join(await getDatabasesPath(), _databaseName);
     
-    // Open the database, creating it if it doesn't exist
-    // onCreate is called only once when the database is first created
     return await openDatabase(
       path,
       version: _databaseVersion,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB, // Handling migration
     );
   }
   
   // ============================================================================
-  // SCHEMA CREATION - CRITICAL FOR LAB RUBRIC
+  // SCHEMA CREATION & MIGRATION
   // ============================================================================
   
-  /// Creates the database schema
-  /// 
-  /// This function is called automatically by SQLite when the database
-  /// is created for the first time.
-  /// 
-  /// IMPORTANT: This SQL schema will be screenshot for lab submission
-  /// to demonstrate "Database Schema Clarity"
+  /// Creates the database schema (V2)
   Future<void> _createDB(Database db, int version) async {
-    // Execute SQL command to create the flashcards table
     await db.execute('''
       CREATE TABLE $tableFlashcards (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnTitle TEXT NOT NULL,
         $columnCategory TEXT NOT NULL,
-        $columnColorValue INTEGER NOT NULL
+        $columnColorValue INTEGER NOT NULL,
+        $columnEaseFactor REAL DEFAULT 2.5,
+        $columnInterval INTEGER DEFAULT 0,
+        $columnRepetitions INTEGER DEFAULT 0,
+        $columnDueDate INTEGER DEFAULT 0
       )
     ''');
     
-    // Optional: Add debug print to verify table creation
-    print('✅ Database table "$tableFlashcards" created successfully');
+    // Seed Starter Data
+    print('🌱 Seeding initial data...');
+    List<Map<String, dynamic>> initialCards = [
+      // Animals (Soft Red)
+      {'title': 'Lion', 'category': 'Animals', 'colorValue': 0xFFFF4B4B},
+      {'title': 'Elephant', 'category': 'Animals', 'colorValue': 0xFFFF4B4B},
+      {'title': 'Tiger', 'category': 'Animals', 'colorValue': 0xFFFF4B4B},
+      
+      // Space (Indigo)
+      {'title': 'Moon', 'category': 'Space', 'colorValue': 0xFF6C5CE7},
+      {'title': 'Sun', 'category': 'Space', 'colorValue': 0xFF6C5CE7},
+      {'title': 'Mars', 'category': 'Space', 'colorValue': 0xFF6C5CE7},
+      {'title': 'Rocket', 'category': 'Space', 'colorValue': 0xFF6C5CE7},
+
+      // Fruits (Orange)
+      {'title': 'Apple', 'category': 'Fruits', 'colorValue': 0xFFFF9F43},
+      {'title': 'Banana', 'category': 'Fruits', 'colorValue': 0xFFFF9F43},
+      {'title': 'Grape', 'category': 'Fruits', 'colorValue': 0xFFFF9F43},
+
+      // Numbers (Green)
+      {'title': 'One', 'category': 'Numbers', 'colorValue': 0xFF58CC02},
+      {'title': 'Two', 'category': 'Numbers', 'colorValue': 0xFF58CC02},
+      {'title': 'Three', 'category': 'Numbers', 'colorValue': 0xFF58CC02},
+    ];
+
+    for (var card in initialCards) {
+      await db.insert(tableFlashcards, card);
+    }
+
+    print('✅ Database table "$tableFlashcards" created and seeded successfully (V2)');
+  }
+
+  /// Handles creating new columns when upgrading from V1 to V2
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      print('🔄 Upgrading Database V$oldVersion -> V$newVersion (Adding SRS Columns)');
+      await db.execute('ALTER TABLE $tableFlashcards ADD COLUMN $columnEaseFactor REAL DEFAULT 2.5');
+      await db.execute('ALTER TABLE $tableFlashcards ADD COLUMN $columnInterval INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE $tableFlashcards ADD COLUMN $columnRepetitions INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE $tableFlashcards ADD COLUMN $columnDueDate INTEGER DEFAULT 0');
+    }
   }
   
   // ============================================================================

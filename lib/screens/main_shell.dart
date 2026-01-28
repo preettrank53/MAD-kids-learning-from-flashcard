@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart';
 import 'manage_cards_screen.dart';
@@ -32,101 +32,37 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Critical for floating nav bar
+      extendBody: false, // Fix overlap: Content sits ABOVE the nav bar
       body: _pages[_selectedIndex],
       bottomNavigationBar: Container(
-        height: 100, // Sufficient space for the floating island
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        alignment: Alignment.bottomCenter,
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            // Glassmorphic Island
-            ClipRRect(
-              borderRadius: BorderRadius.circular(50), // Stadium Shape
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.5),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryAccent.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Left Item: Home
-                      _buildNavItem(Icons.grid_view_rounded, 0),
-                      
-                      // Spacer for the center FAB
-                      const SizedBox(width: 60),
-                      
-                      // Right Item: Settings (or Manage)
-                      // Original code had 3 items: Home, Manage, Settings.
-                      // Let's put Manage on the right for now, or match the user request.
-                      _buildNavItem(Icons.settings_rounded, 2),
-                    ],
-                  ),
-                ),
-              ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 2)),
+        ),
+        child: BottomNavigationBar(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          selectedItemColor: AppTheme.skyBlue,
+          unselectedItemColor: Colors.grey.shade400,
+          selectedLabelStyle: GoogleFonts.fredoka(fontWeight: FontWeight.w600, fontSize: 12),
+          unselectedLabelStyle: GoogleFonts.fredoka(fontWeight: FontWeight.w500, fontSize: 12),
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded),
+              label: 'Home',
             ),
-            
-            // Breaking Boundary Floating Action Button (Clay Style)
-            Positioned(
-              top: -15, // Moves it up to break the boundary
-              child: GestureDetector(
-                onTap: () {
-                   setState(() {
-                     _selectedIndex = 1; // Go to Manage Cards
-                   });
-                },
-                child: ClayCard(
-                  width: 75,
-                  height: 75,
-                  borderRadius: 75,
-                  color: AppTheme.primaryAccent,
-                  depth: 15,
-                  child: const Icon(
-                    Icons.add_rounded, 
-                    color: Colors.white, 
-                    size: 40
-                  ),
-                ),
-              ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.grid_view_rounded), // Manage Cards
+              label: 'Cards',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_rounded),
+              label: 'Settings',
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index) {
-    bool isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: Container(
-        height: 50,
-        width: 50,
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryAccent.withOpacity(0.1) : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          color: isSelected ? AppTheme.primaryAccent : Colors.grey.shade400,
-          size: 30, // Large icons
         ),
       ),
     );

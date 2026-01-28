@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/flashcard_model.dart'; 
 import '../database/db_helper.dart'; 
-import '../widgets/clay_card.dart';
+import '../widgets/clay_card.dart'; // DepthCard
 import '../core/theme/theme.dart';
-import 'study_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../services/user_progress_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,7 +16,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Accessing the singleton instance of the database helper
   final DatabaseHelper _dbHelper = DatabaseHelper.instance; 
   Map<String, List<Flashcard>> categories = {};
   bool isLoading = true;
@@ -49,140 +50,137 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        bottom: false, // Let content flow behind floating nav
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. GREETING CARD
-              Padding(
-                padding: const EdgeInsets.only(bottom: 30),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Consumer<UserProgressService>(
+          builder: (context, userProgress, child) {
+            return Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.borderColor, width: 2),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppTheme.skyBlue,
+                    child: Icon(Icons.face_rounded, color: Colors.white, size: 24),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hi, Leo!',
-                          style: Theme.of(context).textTheme.displayLarge,
-                        ),
-                        Text(
-                          'Ready to learn?',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.lightText,
-                          ),
+                    Text('Hi, Leo!', style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.darkText)),
+                    Text('Level ${userProgress.totalCoins ~/ 100 + 1} Explorer', style: GoogleFonts.fredoka(fontSize: 12, color: AppTheme.lightText)),
+                  ],
+                ),
+              ],
+            );
+          }
+        ),
+        actions: [
+          Consumer<UserProgressService>(
+            builder: (context, userProgress, child) {
+              return Container(
+                margin: const EdgeInsets.only(right: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.sunnyYellow.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.sunnyYellow, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.star_rounded, color: AppTheme.sunnyYellow, size: 20),
+                    const SizedBox(width: 4),
+                    Text('${userProgress.totalCoins}', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: Colors.orange)),
+                  ],
+                ),
+              );
+            }
+          )
+        ],
+        backgroundColor: Colors.white,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(color: AppTheme.borderColor, height: 2),
+        ),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          // 1. Daily Mission (Compact & Colorful)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Consumer<UserProgressService>(
+                builder: (context, userProgress, child) {
+                  return Container(
+                    height: 160,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1CB0F6), Color(0xFF82D6FF)], // Blue -> Light Blue
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1CB0F6).withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
-                    const ClayCard(
-                      height: 50,
-                      width: 50,
-                      borderRadius: 25,
-                      color: AppTheme.backgroundColor,
-                      child: Icon(Icons.face_rounded, color: AppTheme.primaryAccent),
-                    )
-                  ],
-                ),
-              ),
-
-              // 2. BENTO GRID - Daily Goals & Progress
-              SizedBox(
-                height: 240,
-                child: Row(
-                  children: [
-                    // Large "Daily Mission" Tile (Left)
-                    Expanded(
-                      flex: 4,
-                      child: ClayCard(
-                        height: double.infinity,
-                        color: AppTheme.primaryAccent,
-                        borderRadius: 30,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              right: -10,
-                              bottom: -10,
-                              child: Icon(
-                                Icons.rocket_launch_rounded, 
-                                size: 100, 
-                                color: Colors.white.withOpacity(0.2)
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Stack(
+                      children: [
+                        // Background Deco
+                        Positioned(
+                          right: -30,
+                          bottom: -30,
+                          child: Icon(Icons.rocket_launch_rounded, size: 140, color: Colors.white.withOpacity(0.2)),
+                        ),
+                        
+                        Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(15),
+                                      color: Colors.white.withOpacity(0.25),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Text('DAILY MISSION', 
-                                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)
-                                    ),
+                                    child: Text('DAILY MISSION', style: GoogleFonts.fredoka(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
                                   ),
-                                  
-                                  const Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Space', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                                      Text('Explorer', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  
-                                  const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 30),
+                                  const Spacer(),
+                                  const Icon(Icons.local_fire_department_rounded, color: AppTheme.sunnyYellow, size: 24),
+                                  const SizedBox(width: 4),
+                                  Text('${userProgress.currentStreak} Day Streak!', style: GoogleFonts.fredoka(color: Colors.white, fontWeight: FontWeight.bold)),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    // Two Smaller Tiles (Right)
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        children: [
-                          // Top Right: Progress
-                          Expanded(
-                            child: ClayCard(
-                              width: double.infinity,
-                              color: AppTheme.successColor,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 32),
-                                    const SizedBox(height: 5),
-                                    Text('12/20', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 15),
-                          // Bottom Right: Streak
-                          Expanded(
-                            child: ClayCard(
-                              width: double.infinity,
-                              color: AppTheme.secondaryAccent,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 32),
-                                    const SizedBox(height: 5),
-                                    Text('3 Day', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
+                          const Spacer(),
+                          Text('Space Explorer', style: GoogleFonts.fredoka(fontSize: 26, color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text('Learn 5 new planets!', style: GoogleFonts.fredoka(fontSize: 14, color: Colors.white.withOpacity(0.9))),
+                          const SizedBox(height: 12),
+                          // Play Button
+                          SizedBox(
+                            height: 36,
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.push('/quiz'),
+                              icon: const Icon(Icons.play_arrow_rounded, color: AppTheme.skyBlue, size: 20),
+                              label: Text('PLAY NOW', style: GoogleFonts.fredoka(color: AppTheme.skyBlue, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                               ),
                             ),
                           ),
@@ -191,122 +189,147 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // 3. CATEGORIES Header
-              Text(
-                'Collections', 
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: 20),
-
-              // 4. CATEGORIES Dynamic Grid
-              isLoading 
-              ? const Center(child: CircularProgressIndicator()) 
-              : categories.isEmpty 
-                  ? _buildEmptyState()
-                  : GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                        childAspectRatio: 0.9,
-                      ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        String category = categories.keys.elementAt(index);
-                        List<Flashcard> cards = categories[category]!;
-                        return _buildCategoryTile(category, cards, index);
-                      },
-                    ),
-
-              // Extra space for floating nav
-              const SizedBox(height: 120),
-            ],
+              );
+            },
           ),
         ),
+      ),
+
+          // 2. Collections Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text('Your Collections', style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkText)),
+            ),
+          ),
+
+          // 3. Grid
+          SliverPadding(
+             padding: const EdgeInsets.symmetric(horizontal: 20),
+             sliver: isLoading 
+              ? const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()))
+              : categories.isEmpty
+                  ? SliverToBoxAdapter(child: _buildEmptyState())
+                  : SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.85, // Taller cards to fit big icons
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          String category = categories.keys.elementAt(index);
+                          List<Flashcard> cards = categories[category]!;
+                          return _buildCategoryTile(category, cards, index);
+                        },
+                        childCount: categories.length,
+                      ),
+                    ),
+          ),
+
+           // Bottom Padding for scrolling
+           const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        ],
       ),
     );
   }
   
   Widget _buildEmptyState() {
-    return ClayCard(
-      height: 200,
-      width: double.infinity,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.category_rounded, size: 50, color: AppTheme.lightText.withOpacity(0.5)),
-            const SizedBox(height: 10),
-            Text("No flashcards found", style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(40),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(Icons.category_outlined, size: 60, color: AppTheme.lightText.withOpacity(0.3)),
+          const SizedBox(height: 10),
+          Text("No decks yet!", style: GoogleFonts.fredoka(color: AppTheme.lightText, fontSize: 16)),
+        ],
       ),
     );
   }
 
   Widget _buildCategoryTile(String category, List<Flashcard> cards, int index) {
-    List<Color> icons = [AppTheme.warningColor, AppTheme.primaryAccent, AppTheme.secondaryAccent, AppTheme.successColor];
-    Color iconColor = icons[index % icons.length];
+    // Pastel Palette
+    List<Color> pastelColors = [
+      const Color(0xFFDFF9DB), // Light Green
+      const Color(0xFFFFF4CC), // Light Yellow
+      const Color(0xFFFFD6D6), // Light Red/Pink
+      const Color(0xFFD9F2FF), // Light Blue
+    ];
+    
+    // Icon Colors (Darker versions)
+    List<Color> iconColors = [
+      AppTheme.grassGreen,
+      const Color(0xFFFFB000),
+      AppTheme.softRed,
+      AppTheme.skyBlue,
+    ];
 
-    return GestureDetector(
+    Color cardColor = pastelColors[index % pastelColors.length];
+    Color iconColor = iconColors[index % iconColors.length];
+    IconData icon = _getCategoryIcon(category);
+
+    return ClayCard(
+      color: cardColor,
+      depth: 6, // Good depth for 3D feel
+      borderRadius: 20,
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudyScreen(category: category, flashcards: cards),
-          ),
-        );
+        context.push('/study', extra: {'category': category, 'flashcards': cards});
       },
-      child: ClayCard(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Icon
-              Container(
-                decoration: BoxDecoration(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // White Circle Background for Icon
+          Container(
+            height: 80,
+            width: 80,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
                   color: iconColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Icon(Icons.star_rounded, color: iconColor, size: 30),
-              ),
-              
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: AppTheme.darkText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '${cards.length} Cards',
-                    style: GoogleFonts.poppins(
-                      color: AppTheme.lightText,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              )
-            ],
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                )
+              ]
+            ),
+            child: Icon(icon, color: iconColor, size: 40),
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            category,
+            style: GoogleFonts.fredoka(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: AppTheme.darkText,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${cards.length} Cards',
+            style: GoogleFonts.fredoka(
+              color: AppTheme.lightText.withOpacity(0.8),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'animals': return Icons.pets_rounded;
+      case 'space': return Icons.rocket_launch_rounded;
+      case 'fruits': return Icons.apple_rounded; // or nutrition
+      case 'numbers': return Icons.looks_one_rounded; // or calculate
+      default: return Icons.star_rounded;
+    }
   }
 }

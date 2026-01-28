@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'clay_card.dart';
+
 
 /// Custom TextField Widget - Reusable Component
 /// 
@@ -92,57 +95,41 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-/// Custom Button Widget - Reusable Component
+/// Custom Button Widget - Claymorphism Style
 /// 
-/// An elevated button with high shadow, rounded corners, and consistent theming.
-/// Features: Primary color background, white text, prominent shadow.
+/// A soft, 3D button that depresses when clicked.
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
+  final Color? color;
+  final Color? textColor;
 
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
+    this.color,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        // Primary color background
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        
-        // White text
-        foregroundColor: Colors.white,
-        
-        // High elevation for prominent shadow
-        elevation: 8,
-        
-        // Shadow color
-        shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-        
-        // Rounded corners
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30), // Fully rounded
-        ),
-        
-        // Padding for comfortable size
-        padding: const EdgeInsets.symmetric(
-          horizontal: 40,
-          vertical: 16,
-        ),
-        
-        // Minimum size for accessibility
-        minimumSize: const Size(200, 56),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
+    return Center(
+      child: ClayCard(
+        onTap: onPressed,
+        borderRadius: 30,
+        color: color ?? Theme.of(context).colorScheme.primary,
+        depth: 15,
+        spread: 2,
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: textColor ?? Colors.white,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
     );

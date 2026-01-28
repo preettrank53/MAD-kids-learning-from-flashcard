@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../core/theme/theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../services/prefs_service.dart';
 
-/// Settings Screen - Parent Zone
-/// 
-/// This screen demonstrates "Forms & Interactive Controls" (Lab 7).
-/// It allows parents to configure app settings using various input widgets.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -14,11 +12,16 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // State Variables
-  final TextEditingController _nameController = TextEditingController(text: "Leo");
-  bool _isMusicOn = true;
-  double _dailyGoal = 10;
-  String? _difficultyLevel = 'Preschool';
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill name
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nameController.text = Provider.of<PrefsService>(context, listen: false).childName;
+    });
+  }
 
   @override
   void dispose() {
@@ -30,158 +33,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parent Zone'),
-        automaticallyImplyLeading: false,
+        title: const Text('Settings'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ============================================
-            // 1. Text Field: Child's Name
-            // ============================================
-            _buildSectionHeader('Profile Settings'),
-            const SizedBox(height: 16),
-            
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Child's Name",
-                prefixIcon: Icon(Icons.face_rounded),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // ============================================
-            // 2. Switch: Background Music
-            // ============================================
-            _buildSectionHeader('Audio Preferences'),
-            const SizedBox(height: 8),
-            
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SwitchListTile(
-                title: const Text('Background Music'),
-                subtitle: const Text('Play gentle music while learning'),
-                value: _isMusicOn,
-                secondary: const Icon(Icons.music_note_rounded, color: AppTheme.primaryAccent),
-                onChanged: (bool value) {
-                  setState(() {
-                    _isMusicOn = value;
-                  });
-                },
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // ============================================
-            // 3. Slider: Daily Card Goal
-            // ============================================
-            _buildSectionHeader('Learning Goals'),
-            const SizedBox(height: 8),
-            
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: [
-                       Text('Daily Card Goal', style: TextStyle(color: Colors.grey.shade700)),
-                       Text(
-                         '${_dailyGoal.round()} Cards', 
-                         style: const TextStyle(color: AppTheme.primaryAccent, fontWeight: FontWeight.bold),
-                       ),
-                     ],
-                   ),
-                   Slider(
-                    value: _dailyGoal,
-                    min: 5,
-                    max: 50,
-                    divisions: 9, // Steps of 5 (approx)
-                    label: _dailyGoal.round().toString(),
-                    onChanged: (double value) {
-                      setState(() {
-                        _dailyGoal = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // ============================================
-            // 4. Dropdown: Difficulty Level
-            // ============================================
-            _buildSectionHeader('Curriculum'),
-            const SizedBox(height: 16),
-            
-            DropdownButtonFormField<String>(
-              value: _difficultyLevel,
-              decoration: const InputDecoration(
-                labelText: 'Difficulty Level',
-                prefixIcon: Icon(Icons.school_rounded),
-              ),
-              items: ['Toddler', 'Preschool', 'Kindergarten']
-                  .map((String level) {
-                return DropdownMenuItem<String>(
-                  value: level,
-                  child: Text(level),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _difficultyLevel = newValue;
-                });
-              },
-            ),
-            
-            const SizedBox(height: 48),
-            
-            // Save Button (Visual only)
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Settings Saved!')),
-                  );
-                },
-                child: Text(
-                  'Save Changes',
-                  style: GoogleFonts.fredoka(fontSize: 20, color: Colors.white),
+      backgroundColor: Colors.white,
+      body: ListView(
+        children: [
+          // Child Name Input
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Child's Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          hintText: "Enter name",
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_nameController.text.isNotEmpty) {
+                          Provider.of<PrefsService>(context, listen: false).setChildName(_nameController.text);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Name Saved!")));
+                        }
+                      },
+                      child: const Text("Save"),
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Helper mainly for Section Headers
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title.toUpperCase(),
-      style: GoogleFonts.fredoka(
-        color: AppTheme.primaryAccent,
-        fontWeight: FontWeight.w600,
-        fontSize: 18,
-        letterSpacing: 1.0,
+          ),
+          const Divider(),
+          SwitchListTile(
+            title: const Text('Background Music'),
+            value: true,
+            onChanged: (val) {},
+            secondary: const Icon(Icons.music_note_rounded),
+          ),
+          ListTile(
+            leading: const Icon(Icons.timer_rounded),
+            title: const Text('Daily Goal'),
+            subtitle: Slider(
+              value: 10,
+              min: 5,
+              max: 60,
+              divisions: 11,
+              label: '10 min',
+              onChanged: (val) {},
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded, color: Colors.red),
+            title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) context.go('/login');
+            },
+          ),
+        ],
       ),
     );
   }
